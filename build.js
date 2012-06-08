@@ -1,41 +1,35 @@
-var fs = require('fs');
 var path = require('path');
+var fs = require('fs');
 var util = require('util');
-var indexParser = require('./index.js');
+var uglify = require('uglify-js');
+
+var JSDepHandler = require('./depHandlers/JSDepHandler.js');
+var HtmlDepHandler = require('./depHandlers/HtmlDepHandler.js');
+var TmplDepHandler = require('./depHandlers/TmplDepHandler.js');
+
 var dependencyBuilder = require('./dep.js');
 
-
 var indexPath = '/home/hsalkaline/workspace/dealerViewer/index.html';
-
-
-var indexInfo = indexParser.parse(indexPath);
 var rootPath = path.dirname(indexPath);
+var initialFile = path.basename(indexPath);
 
-var indexInlineScript = indexInfo.scripts.filter(function(script){
-  return script.type == 'inline';
-}).map(function(script){
-  return script.content;
-}).join(';');
-
-var indexScripts = indexInfo.scripts.filter(function(script){
-  return script.type == 'external';
-}).map(function(script){
-  return script.src;
-});
-
-var depGraph = dependencyBuilder.getDependencyGraph({
+var dg = dependencyBuilder.getDependencyGraph({
   rootPath: rootPath,
-  basisPath: indexInfo.basisPath,
-  getFileContent: function(filepath){
-    if (filepath == 'index')
-    {
-      return indexInlineScript;
-    }
-    return fs.readFileSync(path.resolve(rootPath, filepath), 'UTF-8');
+  initialFile: {
+    fileName: initialFile,
+    content: fs.readFileSync(indexPath, 'UTF-8')
   },
-  initialFiles: ['index'].concat(indexScripts)
+  fileHandlers: {
+    html: new HtmlDepHandler(),
+    js: new JSDepHandler(),
+    //tmpl: new TmplDepHandler()
+  }
 });
 
-console.log(util.inspect(depGraph, false, null));
+// var CssBuildHandler = require('./buildHandlers/CssBuildHandler.js');
 
+// var cssBuildHandler = CssBuildHandler();
 
+// cssBuildHandler.handle(dg);
+
+console.log(util.inspect(dg, false, null, true));
