@@ -36,7 +36,7 @@ function evalAstArgs(args, context){
     }
     else
     {
-      var code = pro.gen_code(arg);
+      var code = '(' + pro.gen_code(arg) + ')';
       try
       {
         var result = vm.runInNewContext(code, context);
